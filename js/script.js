@@ -87,10 +87,10 @@ class PortfolioApp {
 
         const texts = [
             'Cloud Technologies',
-            'Modern Web Apps',
+            'Intelligent Web Applications',
             'AI/ML Fundamentals', 
-            'Responsive Design',
-            'Problem Solving',
+            'Clean UI And Intuitive UX',
+            'Real-World Problem Solving',
         ];
         
         let textIndex = 0;
