@@ -165,6 +165,9 @@ class PortfolioApp {
             // Set initial ARIA state
             mobileMenuBtn.setAttribute('aria-expanded', 'false');
             
+            // Clean mobile navigation URLs (remove hashes and .html)
+            this.cleanMobileNavUrls(mobileMenu);
+            
             // Create overlay for mobile menu
             const overlay = document.createElement('div');
             overlay.className = 'mobile-menu-overlay';
@@ -198,7 +201,11 @@ class PortfolioApp {
             // Close mobile menu when clicking on a link
             const mobileLinks = mobileMenu.querySelectorAll('a');
             mobileLinks.forEach(link => {
-                link.addEventListener('click', () => toggleMenu(false));
+                link.addEventListener('click', (e) => {
+                    // Handle mobile navigation with clean URLs
+                    this.handleMobileNavClick(e, link);
+                    toggleMenu(false);
+                });
             });
 
             // Close mobile menu when clicking overlay
@@ -210,6 +217,66 @@ class PortfolioApp {
                     toggleMenu(false);
                 }
             });
+        }
+    }
+
+    // ===== MOBILE URL CLEANING (removes hashes and .html for mobile navigation) =====
+    cleanMobileNavUrls(mobileMenu) {
+        // Only process on mobile viewport
+        if (window.innerWidth > 768) return;
+        
+        const links = mobileMenu.querySelectorAll('a');
+        links.forEach(link => {
+            let href = link.getAttribute('href');
+            if (!href || href.startsWith('http') || href.startsWith('mailto') || href.startsWith('tel')) return;
+            
+            // Clean the URL
+            href = this.cleanUrl(href);
+            link.setAttribute('href', href);
+        });
+    }
+
+    cleanUrl(url) {
+        // Remove hash-based navigation (e.g., #about -> /about or about/)
+        if (url.startsWith('#') && url.length > 1) {
+            const section = url.substring(1);
+            // Convert hash to path (e.g., #about -> /about/)
+            return '/' + section + '/';
+        }
+        
+        // Remove .html extension
+        if (url.includes('.html')) {
+            url = url.replace(/\.html$/, '/').replace(/\.html#/, '/#').replace(/\.html\?/, '/?');
+            // Ensure trailing slash for directory-style URLs
+            if (!url.includes('?') && !url.includes('#') && !url.endsWith('/')) {
+                url += '/';
+            }
+        }
+        
+        // Remove hash portion if it matches page sections (e.g., about/#section -> about/)
+        // Keep functional hashes like #main-content
+        const hashMatch = url.match(/#([a-z]+)$/i);
+        if (hashMatch && ['about', 'contact', 'skills', 'projects', 'experience', 'certificates', 'home'].includes(hashMatch[1].toLowerCase())) {
+            url = url.replace(/#[a-z]+$/i, '');
+        }
+        
+        return url;
+    }
+
+    handleMobileNavClick(e, link) {
+        // Only intercept on mobile
+        if (window.innerWidth > 768) return;
+        
+        let href = link.getAttribute('href');
+        if (!href || href.startsWith('http') || href.startsWith('mailto') || href.startsWith('tel')) return;
+        
+        // Clean and navigate to the URL
+        const cleanedUrl = this.cleanUrl(href);
+        
+        // If URL was modified, prevent default and navigate
+        if (cleanedUrl !== href) {
+            e.preventDefault();
+            window.location.href = cleanedUrl;
         }
     }
 
@@ -285,6 +352,12 @@ class PortfolioApp {
     handleResize() {
         // Handle any resize-specific logic
         this.updateActiveNavLink();
+        
+        // Re-clean mobile URLs when entering mobile viewport
+        const mobileMenu = document.querySelector('.mobile-menu');
+        if (mobileMenu) {
+            this.cleanMobileNavUrls(mobileMenu);
+        }
     }
 
     handleLoad() {
