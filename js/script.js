@@ -33,7 +33,6 @@ class PortfolioApp {
     handleScroll() {
         this.updateNavbar();
         this.revealElements();
-        this.updateActiveNavLink();
     }
 
     updateNavbar() {
@@ -126,45 +125,33 @@ class PortfolioApp {
 
     // ===== NAVIGATION =====
     initNavigation() {
-        const navLinks = document.querySelectorAll('.nav-links a[href^="#"]');
-        navLinks.forEach(link => {
-            link.addEventListener('click', this.handleNavClick.bind(this));
-        });
+        this.updateActiveNavLink();
     }
 
     handleNavClick(e) {
-        e.preventDefault();
-        const targetId = e.target.getAttribute('href');
-        const targetElement = document.querySelector(targetId);
-        
-        if (targetElement) {
-            const offsetTop = targetElement.offsetTop - 80;
-            window.scrollTo({
-                top: offsetTop,
-                behavior: 'smooth'
-            });
-        }
+        // No longer needed for hash navigation; kept for future use
     }
 
     updateActiveNavLink() {
-        const sections = document.querySelectorAll('section[id]');
-        const navLinks = document.querySelectorAll('.nav-links a[href^="#"]');
-        
-        let currentSection = '';
-        
-        sections.forEach(section => {
-            const sectionTop = section.offsetTop - 100;
-            const sectionHeight = section.offsetHeight;
-            
-            if (window.scrollY >= sectionTop && window.scrollY < sectionTop + sectionHeight) {
-                currentSection = section.getAttribute('id');
-            }
-        });
+        const navLinks = document.querySelectorAll('.nav-links a');
+        const currentPath = window.location.pathname;
 
         navLinks.forEach(link => {
-            link.classList.remove('active');
-            if (link.getAttribute('href') === `#${currentSection}`) {
+            const href = link.getAttribute('href');
+            if (!href || href.startsWith('http') || href.startsWith('mailto')) return;
+
+            const linkUrl = new URL(href, window.location.href);
+            const linkPath = linkUrl.pathname;
+
+            const isExact = linkPath === currentPath;
+            const isDirectory = linkPath !== '/' && currentPath.startsWith(linkPath) && linkPath.endsWith('/');
+            const isHome = (linkPath === '/' || linkPath === '/index.html') &&
+                           (currentPath === '/' || currentPath === '/index.html');
+
+            if (isExact || isDirectory || isHome) {
                 link.classList.add('active');
+            } else {
+                link.classList.remove('active');
             }
         });
     }
@@ -229,20 +216,19 @@ class PortfolioApp {
     // ===== SMOOTH SCROLLING =====
     initSmoothScrolling() {
         // Already handled in CSS with scroll-behavior: smooth
-        // This is a fallback for browsers that don't support it
+        // This is a fallback for browsers that don't support it (skip link only)
         if (!CSS.supports('scroll-behavior', 'smooth')) {
-            const links = document.querySelectorAll('a[href^="#"]');
-            links.forEach(link => {
-                link.addEventListener('click', (e) => {
+            const skipLink = document.querySelector('a.skip-link[href^="#"]');
+            if (skipLink) {
+                skipLink.addEventListener('click', (e) => {
                     e.preventDefault();
-                    const targetId = link.getAttribute('href');
+                    const targetId = skipLink.getAttribute('href');
                     const targetElement = document.querySelector(targetId);
-                    
                     if (targetElement) {
                         this.smoothScrollTo(targetElement.offsetTop - 80, 800);
                     }
                 });
-            });
+            }
         }
     }
 
